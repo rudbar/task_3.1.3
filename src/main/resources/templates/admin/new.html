@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form th:method="POST" th:action="@{/}" th:object="${user}">
+    <label for="username">Type username: </label>
+    <input type="text" th:field="*{username}" id="username"/>
+    <br/>
+
+    <label for="email">Type email: </label>
+    <input type="text" th:field="*{email}" id="email"/>
+    <br/>
+
+    Admin
+    <input type="checkbox" th:value="ROLE_ADMIN" th:name="roles">
+    <br/>
+    User
+    <input type="checkbox" th:value="ROLE_USER" th:name="roles">
+    <br/>
+
+    <input type="submit" value="Create!"/>
+</form>
+
+<form th:action="@{/logout}" method="get">
+    <input type="submit" value="Logout" />
+</form>
+
+</body>
+</html>
