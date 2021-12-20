@@ -2,11 +2,10 @@ package com.kachanyan.spring.security.controllers;
 
 import com.kachanyan.spring.security.models.Role;
 import com.kachanyan.spring.security.models.User;
-import com.kachanyan.spring.security.repositories.RoleRepo;
-import com.kachanyan.spring.security.repositories.UserRepo;
 import com.kachanyan.spring.security.services.RoleService;
 import com.kachanyan.spring.security.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -16,72 +15,42 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Controller
+@RequestMapping("/")
 public class UserController {
+
     private UserService userService;
-    private UserRepo userRepo;
     private RoleService roleService;
-    private RoleRepo roleRepo;
 
     @Autowired
-    public UserController(UserService userService, UserRepo userRepo, RoleService roleService, RoleRepo roleRepo) {
+    public UserController(UserService userService, RoleService roleService) {
         this.userService = userService;
-        this.userRepo = userRepo;
         this.roleService = roleService;
-        this.roleRepo = roleRepo;
-    }
-
-    @GetMapping(path = "/")
-    public String homePage() {
-        return "login";
-    }
-
-    @GetMapping("/authenticated")
-    public String pageForAuthenticatedUsers(Principal principal, Model model) {
-        User user = userRepo.getUserByUsername(principal.getName());
-//		Authentication a = SecurityContextHolder.getContext().getAuthentication();
-        model.addAttribute("userName", user.getUsername());
-        model.addAttribute("userEmail", user.getEmail());
-        model.addAttribute("userRoles", user.getRoles());
-        model.addAttribute("userAuthorities", user.getAuthorities());
-        return "authenticated";
-    }
-
-    @GetMapping(path = "/admin/main")
-    public String mainPageForAdmin(Principal principal, Model model) {
-        model.addAttribute("users", userService.getAllUsers());
-        return "/admin/main";
     }
 
     @GetMapping(path = "/user/user")
-    public String userPageForUserAndAdmin(Principal principal, Model model) {
-        User user = userRepo.getUserByUsername(principal.getName());
-        model.addAttribute("userId", user.getId());
-        model.addAttribute("userName", user.getUsername());
-        model.addAttribute("userEmail", user.getEmail());
-        model.addAttribute("userRoles", user.getRoles());
-        return "/user/user";
+    public String userInfo(@AuthenticationPrincipal User user, Model model) {
+        model.addAttribute("user", user);
+        model.addAttribute("roles", user.getRoles());
+        return "user/user";
     }
 
-    @GetMapping(path = "/admin/new")
-    public String sendNewUserPageForAdmin(Principal principal, @ModelAttribute("user") User user) {
-        return "/admin/new";
+    @GetMapping(value = "/admin/main")
+    public String listUsers(@AuthenticationPrincipal User user, @AuthenticationPrincipal Role role, Model model) {
+        model.addAttribute("user", user);
+        model.addAttribute("allRoles", roleService.allRoles());
+        model.addAttribute("allUsers", userService.getAllUsers());
+        return "admin/main";
     }
 
-    @PostMapping()
-    public String createNewUserPageForAdmin(Principal principal,
-                                            @ModelAttribute("user") User user,
-                                            Model model,
-                                            @RequestParam(required = false) String[] roles) {
-
+    @PostMapping("admin/create")
+    public String create(@ModelAttribute User user, @RequestParam(value = "newRoles") String[] editRoles) {
         Set<Role> roleSet = new HashSet<>();
-
-        if (roles != null) {
-            for (String role : roles) {
-                roleSet.add(roleService.getRoleByName(role));
-            }
-            user.setRoles(roleSet);
+        for (String role : editRoles) {
+            roleSet.add(roleService.getRoleByName(role));
         }
+        user.setRoles(roleSet);
         userService.addUser(user);
+
         return "redirect:/admin/main";
     }
 
@@ -95,11 +64,11 @@ public class UserController {
     public String updateUserPageForAdmin(Principal principal,
                                          @ModelAttribute("user") User user,
                                          @PathVariable("id") Long id,
-                                         @RequestParam(required = false) String[] roles) {
+                                         @RequestParam(value = "editRoles") String[] editRoles) {
         Set<Role> roleSet = new HashSet<>();
 
-        if (roles != null) {
-            for (String role : roles) {
+        if (editRoles != null) {
+            for (String role : editRoles) {
                 roleSet.add(roleService.getRoleByName(role));
             }
             user.setRoles(roleSet);
@@ -114,5 +83,4 @@ public class UserController {
         userService.deleteUser(id);
         return "redirect:/admin/main";
     }
-
 }
