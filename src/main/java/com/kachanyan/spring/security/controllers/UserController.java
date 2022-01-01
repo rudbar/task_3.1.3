@@ -39,7 +39,7 @@ public class UserController {
         model.addAttribute("user", user);
         model.addAttribute("allRoles", roleService.allRoles());
         model.addAttribute("allUsers", userService.getAllUsers());
-        return "admin/main";
+        return "/admin/main";
     }
 
     @PostMapping("admin/create")
@@ -57,7 +57,7 @@ public class UserController {
     @GetMapping(path = "/admin/{id}/edit")
     public String editUserPageForAdmin(Principal principal, Model model, @PathVariable("id") Long id) {
         model.addAttribute("user", userService.getUserById(id));
-        return "admin/edit";
+        return "/admin/edit";
     }
 
     @PatchMapping(path = "/admin/{id}")
